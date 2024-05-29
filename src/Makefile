@@ -41,4 +41,4 @@ test_grep: s21_grep
 	grep $(ARGS)
 
 test: s21_grep
-	$(CC) $(CFLAGS) -g test.c -o test
+	$(CC) $(CFLAGS) test.c -o test

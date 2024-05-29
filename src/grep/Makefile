@@ -4,7 +4,7 @@ OBJ_DIR = obj/
 SRC_DIR = ./
 INCLUDE = -I headers/
 
-CFLAGS = -std=c11 -Wall -Werror -Wextra -g
+CFLAGS = -std=c11 -Wall -Werror -Wextra
 CC = gcc
 
 SRC_LIST = $(wildcard $(SRC_DIR)*.c)
@@ -15,7 +15,7 @@ $(NAME): $(OBJ_DIR) $(OBJ_LIST)
 	$(CC) $(CFLAGS) $(INCLUDE) -o $(NAME) $(OBJ_LIST)
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.c
-	$(CC) -MMD $(CFLAGS) -c $< -o $@
+	$(CC) -MMD $(CFLAGS) -g -c $< -o $@
 
 -include $(DEP_LIST)
 

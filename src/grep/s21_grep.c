@@ -65,6 +65,7 @@ int main(int argc, char* argv[]) {
     free(buffer);
     q_i++;
   } else if (!has_query_as_e_f_option && arguments >= 0) {
+    free(buffer);
     printUsage();
     arguments = -1;
   }
@@ -199,10 +200,12 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
       if ((arguments & PROCEED_LINE_NUM) && regexec_res) {
         printf("%d:", line_i + 1);
       }
-      if (regexec_res) {
+      if (regexec_res && !(arguments & ONLY_MATCHING_PARTS_LINE)) {
+        printf("%s", buffer);
+      } else {
         printf("%s", buffer);
       }
-    }
+    }  // ONLY_MATCHING_PARTS_LINE
     match_count += regexec_res;
   }
   if (arguments & OUTPUT_COUNT && !(arguments & NO_FILENAME_OUTPUT)) {
@@ -221,6 +224,20 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
     free(buffer);
   }
   return match_count;
+}
+
+void stringCompareAndRipMatch(char** string, const char* match) {
+  char* buffer;
+  int i = 0, k = 0;
+  for (; (*string)[i] != match[0]; i++)
+    ;
+  for (; (*string)[i + k] != match[0 + k]; k++)
+    ;
+  if (match[0 + k] == '\0') {
+    buffer = (*string) + i;
+    buffer[i + k + 1] = '\0';
+    strcpy(*string, buffer);
+  }
 }
 
 int argumentsWrite(char argument) {
