@@ -14,3 +14,4 @@
 extern int argumentsWrite(char*);
 extern int argumentsLongWriting(char*);
 extern void fileHandlerCat(FILE*, const int);
+extern char convertInvisible(const int, char);

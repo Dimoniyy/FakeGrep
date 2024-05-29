@@ -14,12 +14,12 @@ int main(int argc, char* argv[]) {
       stream = stdin;
       i = argc;
     }
-    fileHandlerCat(stream, arguments);
-    i++;
     if (!stream) {
-      printf("s21_cat: %s: No such file or directory", argv[i]);
+      printf("cat: %s: No such file or directory\n", argv[i]);
+    } else {
+      fileHandlerCat(stream, arguments);
     }
-
+    i++;
     fclose(stream);
   } while (i < argc);
 }
@@ -27,7 +27,6 @@ int main(int argc, char* argv[]) {
 void fileHandlerCat(FILE* stream, const int arguments) {
   char c = 'c', c_prev = '\0', c_prev_prev = '\0';
   for (int line = 1; c != EOF;) {
-    // merging multiple empty lines with -s and getting input
     do {
       c = getc(stream);
     } while (arguments & SQUEEZE_MULTIPLE_AJACENT_EMPTY_LINES && c == '\n' &&
@@ -37,7 +36,10 @@ void fileHandlerCat(FILE* stream, const int arguments) {
          (c != '\n' && (c_prev == '\n' || c_prev == '\0') && c != EOF)) ||
         (arguments & NUMBER_LINES && !(arguments & NUMBER_LINES_NO_EMPTY) &&
          (c_prev == '\n' || c_prev == '\0') && c != EOF)) {
-      printf("  %d ", line);
+      for (int k = 100000; k > line && k > 9; k /= 10) {
+        printf(" ");
+      }
+      printf("%d\t", line);
       line++;
     }
     c = convertInvisible(arguments, c);
@@ -59,11 +61,11 @@ void fileHandlerCat(FILE* stream, const int arguments) {
 
 char convertInvisible(const int arguments, char c) {
   if (c != 0xA && arguments & DISPLAY_NON_PRINTING &&
-        c < DISPLAY_TAB_CHARACTERS && c > 0x0 &&
-        (c != 0x9 || arguments & DISPLAY_TAB_CHARACTERS)) {
-      c ^= (0x40 * (c != 0x7F));
-      printf("^");
-    }
+      c < DISPLAY_TAB_CHARACTERS && c > 0x0 &&
+      (c != 0x9 || arguments & DISPLAY_TAB_CHARACTERS)) {
+    c ^= (0x40 * (c != 0x7F && c != '\n'));
+    printf("^");
+  }
   return c;
 }
 
