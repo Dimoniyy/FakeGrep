@@ -178,36 +178,22 @@ char* setupQuery(const char* query) {
 // handeles line search and printing trough a file
 int fileHandler(const int arguments, regex_t reegex, FILE* stream,
                 char* filename) {
-  size_t buffer_size = 1024;
-  int match_count = 0;
   char* buffer = NULL;
-  int regexec_res = 0;
+  size_t buffer_size = 0;
+  int match_count = 0;
+  regmatch_t __pmatch[2];
 
-  for (int line_i = 0; getline(&buffer, &buffer_size, stream) > 0; line_i++) {
-    if (arguments & INVERT_MATCH) {
-      regexec_res = (regexec(&reegex, buffer, 0, NULL, 0) != 0);
-    } else {
-      regexec_res = (regexec(&reegex, buffer, 0, NULL, 0) == 0);
-    }
+  for (int line_i = 0; getLineAndAlloc(&buffer, &buffer_size, stream) > 0;
+       line_i++) {
     if (buffer[strlen(buffer) - 1] != '\n') {
       strcat(buffer, "\n");
     }
-
-    if (!(arguments & OUTPUT_COUNT) && !(MATCHING_FILES_ONLY & arguments)) {
-      if (!(arguments & NO_FILENAME_OUTPUT) && regexec_res) {
-        printf("%s:", filename);
-      }
-      if ((arguments & PROCEED_LINE_NUM) && regexec_res) {
-        printf("%d:", line_i + 1);
-      }
-      if (regexec_res && !(arguments & ONLY_MATCHING_PARTS_LINE)) {
-        printf("%s", buffer);
-      } else {
-        printf("%s", buffer);
-      }
-    }  // ONLY_MATCHING_PARTS_LINE
-    match_count += regexec_res;
+    if (buffer != NULL) {
+      match_count += handleLineWithRegex(buffer, filename, line_i, &reegex,
+                                         __pmatch, arguments);
+    }
   }
+
   if (arguments & OUTPUT_COUNT && !(arguments & NO_FILENAME_OUTPUT)) {
     printf("%s:", filename);
   }
@@ -226,17 +212,90 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
   return match_count;
 }
 
-void stringCompareAndRipMatch(char** string, const char* match) {
-  char* buffer;
-  int i = 0, k = 0;
-  for (; (*string)[i] != match[0]; i++)
-    ;
-  for (; (*string)[i + k] != match[0 + k]; k++)
-    ;
-  if (match[0 + k] == '\0') {
-    buffer = (*string) + i;
-    buffer[i + k + 1] = '\0';
-    strcpy(*string, buffer);
+int handleLineWithRegex(char* buffer, char* filename, int line_i,
+                        regex_t* reegex, regmatch_t __pmatch[], int arguments) {
+  int regexec_res, rv = 0;
+  char* buffer_2;
+  while ((regexec_res = (regexec(reegex, buffer, 1, __pmatch, 0) ==
+                         (arguments & INVERT_MATCH)))) {
+    buffer_2 = strduplicate(buffer);
+
+    if (!(arguments & OUTPUT_COUNT) && !(MATCHING_FILES_ONLY & arguments)) {
+      if (!(arguments & NO_FILENAME_OUTPUT)) {
+        printf("%s:", filename);
+      }
+      if ((arguments & PROCEED_LINE_NUM)) {
+        printf("%d:", line_i + 1);
+      }
+      if (!(arguments & ONLY_MATCHING_PARTS_LINE)) {
+        printf("%s", buffer);
+      } else {
+        strRip(&buffer_2, (*__pmatch).rm_so, (*__pmatch).rm_eo);
+        printf("%s\n", buffer_2);
+      }
+      strRip(&buffer, (*__pmatch).rm_eo, INT_MAX);
+    }
+    rv++;
+    free(buffer_2);
+  }
+  return rv != 0;
+}
+
+ssize_t getLineAndAlloc(char** destination, size_t* size_of_destination,
+                        FILE* stream) {
+  char c;
+  char* destination_new_ptr;
+  size_t i = 0;
+  if (stream == NULL) {
+    c = '\n';
+    i = 1;
+  } else {
+    c = 'c';
+  }
+  if (destination != NULL) {
+    if (*destination == NULL) {
+      (*destination) = malloc(sizeof(char));
+    }
+  }
+  for (; c != '\n' && c != EOF && destination != NULL &&
+         size_of_destination != NULL;
+       i++) {
+    if (i < CHAR_MAX) {
+      c = fgetc(stream);
+      *size_of_destination = sizeof(char) * 8 * (i / 8 + ((i / 8) == 0));
+      destination_new_ptr = realloc(*destination, *size_of_destination);
+      if (destination_new_ptr != NULL) {
+        *destination = destination_new_ptr;
+        (*destination)[i] = (c == EOF ? '\n' : c);
+      } else {
+        printf("allocation error");
+        c = EOF;
+      }
+    } else {
+      c = '\n';
+    }
+  }
+  if (c == EOF && i == 1) {
+    i = -1;
+  }
+  return i;
+}
+
+void strRip(char** target_ptr, const size_t from, const size_t to) {
+  size_t i = 0;
+  char* buffer = strduplicate(*target_ptr);
+  if (to <= strlen(buffer)) {
+    buffer[to] = '\0';
+  }
+  if (from <= strlen(buffer)) {
+    strcpy(*target_ptr, buffer + from);
+  } else if (from <= to) {
+    for (i = 0; i <= sizeof(*target_ptr) * sizeof(char); i++) {
+      (*target_ptr)[i] = '\0';
+    }
+  }
+  if (buffer != NULL) {
+    free(buffer);
   }
 }
 

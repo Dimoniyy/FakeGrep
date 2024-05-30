@@ -7,7 +7,7 @@ ARGS=
 LEAKS=leaks
 GREPARGS=Nya text
 
-all: s21_cat s21_grep test
+all: s21_cat s21_grep clang-format
 
 clang-format:
 	cp $(clang_format_path) $(cat)
@@ -36,9 +36,8 @@ s21_grep:
 leaks_grep: s21_grep
 	$(LEAKS) --atExit -- $(grep)/s21_grep $(ARGS)
 
-test_grep: s21_grep
-	$(grep)/s21_grep $(ARGS)
-	grep $(ARGS)
+test_grep: s21_grep test
+	./test
 
 test: s21_grep
-	$(CC) $(CFLAGS) test.c -o test
+	$(CC) $(CFLAGS) -Ofast test.c -o test
