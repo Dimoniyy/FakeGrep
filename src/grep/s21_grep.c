@@ -127,6 +127,7 @@ regex_t setupReegex(FILE* query_file, const int arguments) {
   }
   if (buffer != NULL) {
     free(buffer);
+    buffer = NULL;
   }
   if (arguments & CASE_INSENSITIVE) {
     reg_flags |= REG_ICASE;
@@ -180,10 +181,10 @@ char* setupQuery(const char* query) {
 // handeles line search and printing trough a file
 int fileHandler(const int arguments, regex_t reegex, FILE* stream,
                 char* filename) {
-  char* buffer = NULL;
   size_t buffer_size = 0;
   int match_count = 0;
 
+  char* buffer = NULL;
   for (int line_i = 0; getLineAndAlloc(&buffer, &buffer_size, stream) > 0;
        line_i++) {
     if (buffer != NULL) {
@@ -191,6 +192,7 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
           handleLineWithRegex(buffer, filename, line_i, reegex, arguments);
     }
   }
+  free(buffer);
 
   if (arguments & OUTPUT_COUNT && !(arguments & NO_FILENAME_OUTPUT)) {
     printf("%s:", filename);
@@ -203,9 +205,6 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
   }
   if (arguments & MATCHING_FILES_ONLY && match_count > 0) {
     printf("%s\n", filename);
-  }
-  if (buffer != NULL) {
-    free(buffer);
   }
   return match_count;
 }
@@ -350,17 +349,19 @@ void printUsage(void) {
 
 int loadQueryFileFromAnother(FILE* dest, const char* file_with_query_name) {
   char* buffer = NULL;
+  char* buffer_2;
   size_t len = 0;
   FILE* stream;
   int rv = 0;
   stream = fopen(file_with_query_name, "r");
   if (stream != NULL) {
     while (getLineAndAlloc(&buffer, &len, stream) != -1) {
-      fprintf(dest, "%s", buffer = setupQuery(buffer));
+      fprintf(dest, "%s", buffer_2 = setupQuery(buffer));
+      if (buffer_2 != NULL) {
+        free(buffer_2);
+      }
     }
-    if (buffer != NULL) {
-      free(buffer);
-    }
+    free(buffer);
     fclose(stream);
   } else {
     rv = -1;
@@ -370,7 +371,7 @@ int loadQueryFileFromAnother(FILE* dest, const char* file_with_query_name) {
 
 char* strduplicate(const char* buffer) {
   char* output = NULL;
-  output = malloc(sizeof(buffer));
+  output = malloc(sizeof(*buffer));
   strcpy(output, buffer);
   return output;
 }
@@ -394,3 +395,37 @@ char* allocateTempFile() {
 
   return temppath_query;
 }
+
+/*int handleLineWithRegex(char* buffer, char* filename, int line_i,
+                        regex_t reegex, int arguments) {
+  regmatch_t __pmatch[3];
+  int regexec_res, rv = 0;
+  char* buffer_2;
+  regexec_res = regexec(&reegex, buffer, 2, __pmatch, 0);
+  while (regexec_res == ((arguments & INVERT_MATCH) != 0)) {
+    buffer_2 = strduplicate(buffer);
+    if ((arguments & ONLY_MATCHING_PARTS_LINE) && !(arguments & INVERT_MATCH)) {
+      strRip(&buffer, __pmatch->rm_eo, ((size_t)0) - 1);
+      strRip(&buffer_2, __pmatch->rm_so, __pmatch->rm_eo);
+    } else {
+      buffer[0] = '\0';
+    }
+    if ((arguments & OUTPUT_COUNT) == 0 &&
+        (MATCHING_FILES_ONLY & arguments) == 0) {
+      if ((arguments & NO_FILENAME_OUTPUT) == 0) {
+        printf("%s:", filename);
+      }
+      if (arguments & PROCEED_LINE_NUM) {
+        printf("%d:", line_i + 1);
+      }
+      printf("%s", buffer_2);
+    }
+    free(buffer_2);
+    regexec_res = (regexec(&reegex, buffer, 2, __pmatch, 0) ==
+                   ((arguments & INVERT_MATCH) != 0));
+
+    arguments = arguments ^ (arguments & INVERT_MATCH);
+    rv++;
+  }
+  return rv != 0;
+}*/
