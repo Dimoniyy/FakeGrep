@@ -40,4 +40,4 @@ test_grep: s21_grep test
 	./test
 
 test: s21_grep
-	$(CC) $(CFLAGS) -Ofast test.c -o test
+	$(CC) $(CFLAGS) -o $@ test.c

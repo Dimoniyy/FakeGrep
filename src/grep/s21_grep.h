@@ -15,6 +15,7 @@
 #define PROCEED_LINE_NUM 0x20          // -n
 #define SUPPRESS_FILENAME_ERRORS 0x40  // -s
 #define ONLY_MATCHING_PARTS_LINE 0x80  // -o
+#define TEMP_DIR "./temp/"
 
 extern int fileHandler(const int, regex_t, FILE*, char*);
 extern int argumentsWrite(char);

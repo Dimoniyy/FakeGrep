@@ -19,61 +19,62 @@ int main(int argc, char* argv[]) {
       has_query_as_e_f_option |= (argv[i][k] == 'e' || argv[i][k] == 'f');
     }
   }
+  if (use_as_query_n == 0 && has_query_as_e_f_option == 0) {
+    arguments = -1;
+    printUsage();
+  } else {
+    use_as_query_n *= !has_query_as_e_f_option;
+  }
 
   temppath_query = allocateTempFile();
   if (temppath_query != NULL) {
-    query_file = fopen(temppath_query, "a+");
+    query_file = fopen(temppath_query, "w");
   } else {
     arguments = -1;
   }
-
   for (int i = 1; i < argc && arguments >= 0; i++) {
-    for (int k = 1; arguments >= 0 && argv[i][0] == '-' && argv[i][k] != '\0';
-         k++) {
-      switch (argv[i][k]) {
-        case 'e':
-          t = (argv[i][k + 1] == '\0');
-          i += t;
-          buffer = setupQuery((argv[i] + ((k + 1) * !t)));
-          fprintf(query_file, "%s", buffer);
-          free(buffer);
-          i += (i + 1) < argc;
-          k += ((i + 1) > argc) * strlen(argv[i] + ((k + 1) * !t));
-          break;
-        case 'f':
-          t = (argv[i][k + 1] == '\0');
-          i += t;
-          arguments |=
-              loadQueryFileFromAnother(query_file, argv[i] + ((k + 1) * !t));
-          i += (i + 1) < argc;
-          k += ((i + 1) >= argc) * strlen(argv[i] + ((k + 1) * !t));
-          break;
-        default:
-          arguments |= argumentsWrite(argv[i][k]);
-          break;
-      }
-    }
-    if (argv[i][0] != '-' &&
-        !(i == use_as_query_n && !has_query_as_e_f_option)) {
+    if (i != use_as_query_n && argv[i][0] != '-') {
       files_names[i_files_to_process] = strduplicate(argv[i]);
       i_files_to_process++;
+    } else if (argv[i][0] != '-') {
+      fputs(buffer = setupQuery(argv[use_as_query_n]), query_file);
+      free(buffer);
+      q_i++;
+    }
+    for (int k = 1; arguments >= 0 && argv[i][0] == '-' && argv[i][k] != '\0';
+         k++) {
+      t = (argv[i][k + 1] == '\0');
+      if ((i + t) < argc) {
+        switch (argv[i][k]) {
+          case 'e':
+            i += t;
+            buffer = setupQuery((argv[i] + ((k + 1) * !t)));
+            fputs(buffer, query_file);
+            fputs("\n", query_file);
+            free(buffer);
+            break;
+          case 'f':
+            i += t;
+            arguments |=
+                loadQueryFileFromAnother(query_file, argv[i] + ((k + 1) * !t));
+            break;
+          default:
+            arguments |= argumentsWrite(argv[i][k]);
+        }
+      } else {
+        printf("grep: option requires an argument -- %c\n", argv[i][k]);
+        printUsage();
+        arguments = -1;
+      }
     }
   }
 
-  if (use_as_query_n > 0 && !has_query_as_e_f_option && arguments >= 0) {
-    fputs(buffer = setupQuery(argv[use_as_query_n]), query_file);
-    free(buffer);
-    q_i++;
-  } else if (!has_query_as_e_f_option && arguments >= 0) {
-    free(buffer);
-    printUsage();
-    arguments = -1;
-  }
   if (query_file != NULL) {
-    query_file = freopen(temppath_query, "r", query_file);
+    fclose(query_file);
+    query_file = fopen(temppath_query, "r");
   }
 
-  if (argc > 1 && arguments >= 0 && use_as_query_n > 0) {
+  if (argc > 1 && arguments >= 0) {
     reegex = setupReegex(query_file, arguments);
   } else {
     arguments |= -1;
@@ -83,14 +84,12 @@ int main(int argc, char* argv[]) {
     fclose(query_file);
     remove(temppath_query);
   }
-  if (temppath_query != NULL) {
-    free(temppath_query);
-  }
+  free(temppath_query);
 
   if (i_files_to_process <= 1) {
     arguments |= NO_FILENAME_OUTPUT;
   }
-  if (i_files_to_process == 0 && use_as_query_n > 0 && arguments >= 0) {
+  if (i_files_to_process == 0 && arguments >= 0) {
     fileHandler(arguments, reegex, stdin, "stdin");
   }
 
@@ -116,10 +115,11 @@ regex_t setupReegex(FILE* query_file, const int arguments) {
   int reg_flags = REG_EXTENDED;
 
   if (query_file != NULL) {
-    while (getline(&buffer, &len, query_file) != -1) {
+    while (getLineAndAlloc(&buffer, &len, query_file) != -1) {
       if (reegex_format[0] != '\0') {
         strcat(reegex_format, "|");
       }
+      buffer[strlen(buffer) - 1] = '\0';
       strcat(reegex_format, buffer);
     }
   }
@@ -181,13 +181,10 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
   char* buffer = NULL;
   size_t buffer_size = 0;
   int match_count = 0;
-  regmatch_t __pmatch[2];
+  regmatch_t __pmatch[3];
 
   for (int line_i = 0; getLineAndAlloc(&buffer, &buffer_size, stream) > 0;
        line_i++) {
-    if (buffer[strlen(buffer) - 1] != '\n') {
-      strcat(buffer, "\n");
-    }
     if (buffer != NULL) {
       match_count += handleLineWithRegex(buffer, filename, line_i, &reegex,
                                          __pmatch, arguments);
@@ -216,27 +213,30 @@ int handleLineWithRegex(char* buffer, char* filename, int line_i,
                         regex_t* reegex, regmatch_t __pmatch[], int arguments) {
   int regexec_res, rv = 0;
   char* buffer_2;
-  while ((regexec_res = (regexec(reegex, buffer, 1, __pmatch, 0) ==
-                         (arguments & INVERT_MATCH)))) {
+  while ((regexec_res = (regexec(reegex, buffer, 2, __pmatch, 0) ==
+                         ((arguments & INVERT_MATCH) != 0)))) {
     buffer_2 = strduplicate(buffer);
 
-    if (!(arguments & OUTPUT_COUNT) && !(MATCHING_FILES_ONLY & arguments)) {
-      if (!(arguments & NO_FILENAME_OUTPUT)) {
+    if ((arguments & ONLY_MATCHING_PARTS_LINE) && !(arguments & INVERT_MATCH)) {
+      strRip(&buffer, __pmatch->rm_eo, ((size_t)0) - 1);
+      strRip(&buffer_2, __pmatch->rm_so, __pmatch->rm_eo);
+    } else {
+      buffer[0] = '\0';
+    }
+    if ((arguments & OUTPUT_COUNT) == 0 &&
+        (MATCHING_FILES_ONLY & arguments) == 0) {
+      if ((arguments & NO_FILENAME_OUTPUT) == 0) {
         printf("%s:", filename);
       }
-      if ((arguments & PROCEED_LINE_NUM)) {
+      if (arguments & PROCEED_LINE_NUM) {
         printf("%d:", line_i + 1);
       }
-      if (!(arguments & ONLY_MATCHING_PARTS_LINE)) {
-        printf("%s", buffer);
-      } else {
-        strRip(&buffer_2, (*__pmatch).rm_so, (*__pmatch).rm_eo);
-        printf("%s\n", buffer_2);
-      }
-      strRip(&buffer, (*__pmatch).rm_eo, INT_MAX);
+      printf("%s", buffer_2);
     }
+
     rv++;
     free(buffer_2);
+    arguments = arguments ^ (arguments & INVERT_MATCH);
   }
   return rv != 0;
 }
@@ -275,9 +275,11 @@ ssize_t getLineAndAlloc(char** destination, size_t* size_of_destination,
       c = '\n';
     }
   }
+  (*destination)[i] = '\0';
   if (c == EOF && i == 1) {
     i = -1;
   }
+  (*destination)[i + 1] = '\0';
   return i;
 }
 
@@ -351,17 +353,17 @@ int loadQueryFileFromAnother(FILE* dest, const char* file_with_query_name) {
   int rv = 0;
   stream = fopen(file_with_query_name, "r");
   if (stream != NULL) {
-    while (getline(&buffer, &len, stream) != -1) {
+    while (getLineAndAlloc(&buffer, &len, stream) != -1) {
       fprintf(dest, "%s", buffer = setupQuery(buffer));
+      if (buffer != NULL) {
+        free(buffer);
+      }
     }
   } else {
     rv = -1;
   }
   if (stream != NULL) {
     fclose(stream);
-  }
-  if (buffer != NULL) {
-    free(buffer);
   }
   return rv;
 }
@@ -375,25 +377,20 @@ char* strduplicate(const char* buffer) {
 
 char* allocateTempFile() {
   char* temppath_query;
-  char* buffer = NULL;
-  buffer = getenv("TMPDIR");
-  if (buffer == NULL) {
-    printf("TMPDIR undefined!");
-    temppath_query = NULL;
-  }
-  if (buffer != NULL) {
-    temppath_query = malloc(sizeof(char) * 261);
-    strcpy(temppath_query, buffer);
-    if (strlen(temppath_query) + 16 < 261) {
-      for (int i = 1; open(temppath_query, O_CREAT | O_WRONLY | O_EXCL,
-                           S_IRUSR | S_IWUSR) == -1;
-           i++) {
-        temppath_query[strlen(temppath_query) - 1] = '\0';
-        snprintf(temppath_query, sizeof(char) * 261, "s21_grep_temp_%d", i);
-      }
-    } else {
-      printf("error");
+
+  temppath_query = malloc(sizeof(char) * 261);
+  system("mkdir -p ./temp");
+  strcpy(temppath_query, "./temp/s21_grep_temp_0");
+  if (strlen(temppath_query) + 16 < 261) {
+    for (int i = 1; open(temppath_query, O_CREAT | O_WRONLY | O_EXCL,
+                         S_IRUSR | S_IWUSR) == -1;
+         i++) {
+      snprintf(temppath_query, sizeof(char) * 261, "./temp/s21_grep_temp_%d",
+               i);
     }
+  } else {
+    printf("error");
   }
+
   return temppath_query;
 }
