@@ -29,7 +29,6 @@ extern void strRip(char** target_ptr, const size_t from, const size_t to);
 extern ssize_t getLineAndAlloc(char** destination, size_t* size_of_destination,
                                FILE* stream);
 extern int handleLineWithRegex(char* buffer, char* filename, int line_i,
-                               regex_t* reegex, regmatch_t __pmatch[],
-                               int arguments);
+                               regex_t reegex, int arguments);
 
 #endif

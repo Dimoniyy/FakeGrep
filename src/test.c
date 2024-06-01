@@ -28,7 +28,6 @@ int main() {
   int how_many = 0;
   int res = 0;
   int fail = 0;
-  // char tempfile1[256], tempfile2[256];
   system("echo \"start of log file:\" > log_file\n");
   out = malloc(sizeof(char) * BUFFER_MAX_LENGHT * BUFFER_MAX_LENGHT);
   log_file = fopen("./log_file", "w");
@@ -143,54 +142,3 @@ int combinations(const char* letters, char* temp_res, unsigned long int from,
   }
   return out_n;
 }
-
-/*
-struct array_with_positon {
-  unsigned int pos;
-  unsigned int max;
-  void* array;
-};
-
-struct matrix_with_positon {
-  struct array_with_positon* matrix;
-  unsigned int pos;
-  unsigned int max;
-};
-
-void addNewArrayToMatrixWithPosition(struct matrix_with_positon* dest, struct
-array_with_positon* array_to_add); struct array_with_positon*
-makeArrayWithPosition(); void addToArrayInMatrixWithPostion(struct
-matrix_with_positon* target, void* ptr_to_thing_to_add);
-
-void addNewArrayToMatrixWithPosition(struct matrix_with_positon* dest, struct
-array_with_positon* array_to_add) { dest->matrix = realloc(dest->matrix,
-sizeof(dest->matrix) + sizeof(array_to_add)); dest->max++;
-  (dest->matrix)[dest->max].array = array_with_positon_fresh(array_to_add);
-}
-
-void printoutMatrixWithPosition(struct matrix_with_positon* origin) {
-  setPosMatrixWithPosition(origin, 0);
-  for (int i = 0; i < origin->max; i++) {
-    printf("%s", accessMatrixWithPosition(origin));
-  }
-}
-
-void setPosMatrixWithPosition(struct matrix_with_positon* target, unsigned int
-position) { if (position <= target->max) { target->pos = position;
-  }
-}
-
-struct array_with_positon* makeArrayWithPosition() {
-  struct array_with_positon* array_with_positon_fresh = malloc(sizeof(struct
-array_with_positon)); array_with_positon_fresh->max = 0;
-  array_with_positon_fresh->pos = 0;
-  return array_with_positon_fresh;
-}
-
-void addToArrayInMatrixWithPostion(struct matrix_with_positon* target, void*
-ptr_to_thing_to_add) {
-  (target->matrix[target->pos].array[target->matrix[target->pos].pos]) =
-*ptr_to_thing_to_add; target->matrix[target->pos].pos++;
-}
-
-*/

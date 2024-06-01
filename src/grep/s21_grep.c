@@ -41,8 +41,8 @@ int main(int argc, char* argv[]) {
       free(buffer);
       q_i++;
     }
-    for (int k = 1; arguments >= 0 && argv[i][0] == '-' && argv[i][k] != '\0';
-         k++) {
+    for (unsigned int k = 1;
+         arguments >= 0 && argv[i][0] == '-' && argv[i][k] != '\0'; k++) {
       t = (argv[i][k + 1] == '\0');
       if ((i + t) < argc) {
         switch (argv[i][k]) {
@@ -52,11 +52,13 @@ int main(int argc, char* argv[]) {
             fputs(buffer, query_file);
             fputs("\n", query_file);
             free(buffer);
+            k = (t == 0) ? (strlen(argv[i]) - 1) : k;
             break;
           case 'f':
             i += t;
             arguments |=
                 loadQueryFileFromAnother(query_file, argv[i] + ((k + 1) * !t));
+            k = (t == 0) ? strlen(argv[i]) - 1 : k;
             break;
           default:
             arguments |= argumentsWrite(argv[i][k]);
@@ -181,13 +183,12 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
   char* buffer = NULL;
   size_t buffer_size = 0;
   int match_count = 0;
-  regmatch_t __pmatch[3];
 
   for (int line_i = 0; getLineAndAlloc(&buffer, &buffer_size, stream) > 0;
        line_i++) {
     if (buffer != NULL) {
-      match_count += handleLineWithRegex(buffer, filename, line_i, &reegex,
-                                         __pmatch, arguments);
+      match_count +=
+          handleLineWithRegex(buffer, filename, line_i, reegex, arguments);
     }
   }
 
@@ -210,10 +211,11 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
 }
 
 int handleLineWithRegex(char* buffer, char* filename, int line_i,
-                        regex_t* reegex, regmatch_t __pmatch[], int arguments) {
+                        regex_t reegex, int arguments) {
+  regmatch_t __pmatch[3];
   int regexec_res, rv = 0;
   char* buffer_2;
-  while ((regexec_res = (regexec(reegex, buffer, 2, __pmatch, 0) ==
+  while ((regexec_res = (regexec(&reegex, buffer, 2, __pmatch, 0) ==
                          ((arguments & INVERT_MATCH) != 0)))) {
     buffer_2 = strduplicate(buffer);
 
@@ -355,15 +357,13 @@ int loadQueryFileFromAnother(FILE* dest, const char* file_with_query_name) {
   if (stream != NULL) {
     while (getLineAndAlloc(&buffer, &len, stream) != -1) {
       fprintf(dest, "%s", buffer = setupQuery(buffer));
-      if (buffer != NULL) {
-        free(buffer);
-      }
     }
+    if (buffer != NULL) {
+      free(buffer);
+    }
+    fclose(stream);
   } else {
     rv = -1;
-  }
-  if (stream != NULL) {
-    fclose(stream);
   }
   return rv;
 }
