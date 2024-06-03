@@ -242,8 +242,8 @@ int handleLineWithRegex(char* buffer, char* filename, int line_i,
   return rv != 0;
 }
 
-ssize_t getLineAndAlloc(char** destination, size_t* size_of_destination,
-                        FILE* stream) {
+long long getLineAndAlloc(char** destination, size_t* size_of_destination,
+                          FILE* stream) {
   char c;
   char* destination_new_ptr;
   size_t i = 0;
