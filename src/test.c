@@ -21,29 +21,33 @@ int filesCompare(char* file_1_path, char* file_2_path);
 void runCompareGrep(char*);
 
 int main() {
-  char letters[] = "livchnso";
+  char letters[] = "livchnso";  // 8 letters
   char buffer[BUFFER_MAX_LENGHT];
   char** out;
   FILE* log_file;
-  int how_many = 0;
-  int res = 0;
-  int fail = 0;
+  int how_many = 0, fail = 0, res = 0;
+  clock_t t;
+  t = clock();
   system("echo \"start of log file:\" > log_file\n");
-  out = malloc(sizeof(char) * BUFFER_MAX_LENGHT * BUFFER_MAX_LENGHT);
+  out = malloc(sizeof(char*) * BUFFER_MAX_LENGHT * BUFFER_MAX_LENGHT);
   log_file = fopen("./log_file", "w");
   for (int i = 1; i < 8; i++) {
     how_many = combinations(letters, buffer, 0, 8, 0, i, out);
-    for (int j = 0; j < how_many; j++) {
-      runCompareGrep(out[j]);
-      snprintf(buffer, BUFFER_MAX_LENGHT,
-               "diff $TMPDIR/tempfile_test_grep $TMPDIR/tempfile_test_s21grep "
-               ">> log_file");
-      fputc('\n', log_file);
-      if (fail) {
-        fprintf(log_file, "fail with -%s\n", out[j]);
-      }
-      res += fail;
+  }
+  t = clock() - t;
+  double time_taken = (((double)t / (clock_t)1000));
+  printf("combinations took %f seconds to run\n", time_taken);
+  t = clock();
+  for (int j = 0; j < how_many; j++) {
+    runCompareGrep(out[j]);
+    snprintf(buffer, BUFFER_MAX_LENGHT,
+             "diff $TMPDIR/tempfile_test_grep $TMPDIR/tempfile_test_s21grep "
+             ">> log_file");
+    fputc('\n', log_file);
+    if (fail) {
+      fprintf(log_file, "fail with -%s\n", out[j]);
     }
+    res += fail;
   }
   for (int j = 0; j < how_many; j++) {
     free(out[j]);
@@ -51,8 +55,11 @@ int main() {
   free(out);
   printf("%d fail(s)\n", res);
   if (res > 0) {
-    printf("check log_file for details");
+    printf("check log_file for details\n");
   }
+  t = clock() - t;
+  time_taken = (((double)t / (clock_t)1000));
+  printf("time taken to run - %f\n", time_taken);
   system("rm $TMPDIR/tempfile_test_grep");
   system("rm $TMPDIR/tempfile_test_s21grep");
 }
@@ -126,19 +133,20 @@ int combinations(const char* letters, char* temp_res, unsigned long int from,
                  unsigned long int until, unsigned long int iteration,
                  unsigned long int target_lenght, char** out) {
   static int out_n = 0;
-  if (iteration == target_lenght) {
+  if (iteration == target_lenght &&
+      out_n < (BUFFER_MAX_LENGHT * BUFFER_MAX_LENGHT)) {
     temp_res[target_lenght] = '\0';
     out[out_n] = strdup(temp_res);
     out_n++;
   }
-  for (unsigned long int i = from;
-       i < strlen(letters) &&
-       from + target_lenght - iteration <= strlen(letters) &&
-       iteration < target_lenght;
-       i++) {
+  unsigned long int i = from;
+  while (i < strlen(letters) &&
+         from + target_lenght - iteration <= strlen(letters) &&
+         iteration < target_lenght) {
     temp_res[iteration] = letters[i];
     combinations(letters, temp_res, i + 1, until, iteration + 1, target_lenght,
                  out);
+    i++;
   }
   return out_n;
 }

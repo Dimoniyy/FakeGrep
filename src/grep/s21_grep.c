@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     }
     for (unsigned int k = 1;
          arguments >= 0 && argv[i][0] == '-' && argv[i][k] != '\0'; k++) {
-      t = (argv[i][k + 1] == '\0');
+      t = ((argv[i][k + 1] == '\0') && (argv[i][k] == 'f' || argv[i][k] == 'e'));
       if ((i + t) < argc) {
         switch (argv[i][k]) {
           case 'e':
@@ -136,32 +136,30 @@ regex_t setupReegex(FILE* query_file, const int arguments) {
 char* setupQuery(const char* query) {
   char prev = '\0';
   char *buffer, *buffer2 = NULL;
-  char checking[][1] = {"(", ")", "{", "}", "?", "+", "|", "^", "$", "\0"};
+  char checking[] = "(){}?+|^$";  // 9 chars
   buffer = strduplicate(query);
 
-  for (int i = 0; checking[i][0] && buffer != NULL; i++) {
-    for (int j = 0; buffer[j]; j++) {
-      if (buffer[j] == checking[i][0] && prev != '\\') {
+  for (int j = 0, i = 0; buffer[j]; j++) {
+    while (buffer[j] != checking[i] && checking[i] != '\0') {
+      i++;
+    }
+    if (buffer[j] == checking[i]) {
+      if (prev != '\\') {
         buffer2 = strduplicate(buffer + j);
         buffer[j] = '\0';
         strcat(buffer, "\\");
         strcat(buffer, buffer2);
-        if (buffer2 != NULL) {
-          free(buffer2);
-        }
-        j++;
-      }
-      if (buffer[j] == checking[i][0] && prev == '\\') {
+      } else {
         buffer2 = strduplicate(buffer + j);
         buffer[j - 1] = '\0';
         strcat(buffer, buffer2);
         j--;
-        if (buffer2 != NULL) {
-          free(buffer2);
-        }
       }
-      prev = buffer[j];
+      if (buffer2 != NULL) {
+        free(buffer2);
+      }
     }
+    prev = buffer[j];
   }
   return buffer;
 }
@@ -210,6 +208,7 @@ int handleLineWithRegex(char* buffer, char* filename, int line_i,
     if ((arguments & ONLY_MATCHING_PARTS_LINE) && !(arguments & INVERT_MATCH)) {
       strRip(&buffer, __pmatch->rm_eo, ((size_t)0) - 1);
       strRip(&buffer_2, __pmatch->rm_so, __pmatch->rm_eo);
+      strcat(buffer_2, "\n");
     } else {
       buffer[0] = '\0';
     }
@@ -251,7 +250,7 @@ long long getLineAndAlloc(char** destination, size_t* size_of_destination,
        i++) {
     if (i < CHAR_MAX) {
       c = fgetc(stream);
-      destination_new_ptr = realloc(*destination, sizeof(char) * i + 1);
+      destination_new_ptr = realloc(*destination, sizeof(char) * i + 2);
       if (destination_new_ptr != NULL) {
         *destination = destination_new_ptr;
         (*destination)[i] = (c == EOF ? '\n' : c);
@@ -363,7 +362,7 @@ char* strduplicate(const char* buffer) {
   char* output = NULL;
   output = malloc((strlen(buffer) + 1) * sizeof(char));
   if (output != NULL) {
-    memcpy(output, buffer, (strlen(buffer) + 1) * sizeof(char));
+    strcpy(output, buffer);
   }
   return output;
 }
