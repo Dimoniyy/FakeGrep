@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  rewind(query_file);
+  if (query_file != NULL) rewind(query_file);
   if (argc > 1 && arguments >= 0) {
     reegex = setupReegex(query_file, arguments);
   } else {
