@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
 
   char* buffer = NULL;
   char* files_names[1024];
-  char* temppath_query;
+  char tempfile_path[] = "./temp/s21greptemp.XXXX";
   regex_t reegex;
   FILE* query_file = NULL;
   FILE* stream;
@@ -26,11 +26,13 @@ int main(int argc, char* argv[]) {
     use_as_query_n *= !has_query_as_e_f_option;
   }
 
-  temppath_query = allocateTempFile();
-  if (temppath_query != NULL) {
-    query_file = fopen(temppath_query, "w");
-  } else {
+  system("mkdir -p ./temp");
+  for (int i = 0; query_file == NULL && i < 99999; i++)
+    query_file = fdopen((mkstemp(tempfile_path)), "w+");
+
+  if (query_file == NULL) {
     arguments = -1;
+    printf("error: cannot make tempfile");
   }
   for (int i = 1; i < argc && arguments >= 0; i++) {
     if (i != use_as_query_n && argv[i][0] != '-') {
@@ -71,11 +73,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (query_file != NULL) {
-    fclose(query_file);
-    query_file = fopen(temppath_query, "r");
-  }
-
+  rewind(query_file);
   if (argc > 1 && arguments >= 0) {
     reegex = setupReegex(query_file, arguments);
   } else {
@@ -84,9 +82,8 @@ int main(int argc, char* argv[]) {
   }
   if (query_file != NULL) {
     fclose(query_file);
-    remove(temppath_query);
+    remove(tempfile_path);
   }
-  free(temppath_query);
 
   if (i_files_to_process <= 1) {
     arguments |= NO_FILENAME_OUTPUT;
@@ -369,7 +366,7 @@ int loadQueryFileFromAnother(FILE* dest, const char* file_with_query_name) {
 
 char* strduplicate(const char* buffer) {
   char* output = NULL;
-  output = malloc(sizeof(*buffer));
+  output = malloc((strlen(buffer) + 1) * sizeof(char));
   if (output != NULL) {
     strcpy(output, buffer);
   }
