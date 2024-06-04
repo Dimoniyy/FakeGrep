@@ -4,7 +4,7 @@ OBJ_DIR = obj/
 SRC_DIR = ./
 INCLUDE = -I ./
 
-CFLAGS = -std=c11 -Wall -Werror -Wextra -g3
+CFLAGS = -Wall -Werror -Wextra -std=c11 -g
 CC = gcc
 
 SRC_LIST = $(wildcard $(SRC_DIR)*.c)

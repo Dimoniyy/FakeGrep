@@ -207,10 +207,11 @@ int handleLineWithRegex(char* buffer, char* filename, int line_i,
                         regex_t reegex, int arguments) {
   regmatch_t __pmatch[4];
   int rv = 0;
-  char* buffer_2;
+  char* buffer_2 = NULL;
   while (regexec(&reegex, buffer, 2, __pmatch, 0) ==
          ((arguments & INVERT_MATCH) != 0)) {
     buffer_2 = strduplicate(buffer);
+    if (buffer_2 == NULL) buffer_2 = strduplicate("\0");
 
     if ((arguments & ONLY_MATCHING_PARTS_LINE) && !(arguments & INVERT_MATCH)) {
       strRip(&buffer, __pmatch->rm_eo, ((size_t)0) - 1);
@@ -368,24 +369,7 @@ char* strduplicate(const char* buffer) {
   char* output = NULL;
   output = malloc((strlen(buffer) + 1) * sizeof(char));
   if (output != NULL) {
-    strcpy(output, buffer);
+    memcpy(output, buffer, (strlen(buffer) + 1) * sizeof(char));
   }
   return output;
-}
-
-char* allocateTempFile() {
-  char* temppath_query = strduplicate("./temp/s21_grep_temp_0");
-  system("mkdir -p ./temp");
-  if (strlen(temppath_query) + 16 < 261) {
-    for (int i = 1; open(temppath_query, O_CREAT | O_WRONLY | O_EXCL,
-                         S_IRUSR | S_IWUSR) == -1;
-         i++) {
-      snprintf(temppath_query, sizeof(char) * 261, "./temp/s21_grep_temp_%d",
-               i);
-    }
-  } else {
-    printf("grep: Error creating temporary file");
-  }
-
-  return temppath_query;
 }
