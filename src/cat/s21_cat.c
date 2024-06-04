@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
       fileHandlerCat(stream, arguments);
     }
     i++;
-    fclose(stream);
+    if (stream != NULL) fclose(stream);
   } while (i < argc);
 }
 
