@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   }
   for (int i = 1; i < argc && arguments >= 0; i++) {
     if (i != use_as_query_n && argv[i][0] != '-') {
-      files_names[i_files_to_process] = strduplicate(argv[i]);
+      files_names[i_files_to_process] = (argv[i]);
       i_files_to_process++;
     } else if (argv[i][0] != '-') {
       fputs(buffer = setupQuery(argv[use_as_query_n]), query_file);
@@ -101,9 +101,6 @@ int main(int argc, char* argv[]) {
       fclose(stream);
     } else if (SUPPRESS_FILENAME_ERRORS ^ arguments) {
       printf("s21_grep: %s: No such file or directory\n", files_names[i]);
-    }
-    if (files_names[i] != NULL) {
-      free(files_names[i]);
     }
   }
   regfree(&reegex);
@@ -244,14 +241,12 @@ int handleLineWithRegex(char* buffer, char* filename, int line_i,
 
 long long getLineAndAlloc(char** destination, size_t* size_of_destination,
                           FILE* stream) {
-  char c;
+  char c = 'c';
   char* destination_new_ptr;
   size_t i = 0;
   if (stream == NULL) {
     c = '\n';
     i = 1;
-  } else {
-    c = 'c';
   }
   if (destination != NULL) {
     if (*destination == NULL) {
@@ -357,8 +352,8 @@ int loadQueryFileFromAnother(FILE* dest, const char* file_with_query_name) {
   if (stream != NULL) {
     while (getLineAndAlloc(&buffer, &len, stream) != -1) {
       buffer_2 = setupQuery(buffer);
-      for(int i = 0; buffer_2[i] != '\0'; i++) {
-      putc(buffer_2[i], dest);
+      for (int i = 0; buffer_2[i] != '\0'; i++) {
+        putc(buffer_2[i], dest);
       }
       if (buffer_2 != NULL) {
         free(buffer_2);
@@ -382,10 +377,8 @@ char* strduplicate(const char* buffer) {
 }
 
 char* allocateTempFile() {
-  char* temppath_query;
-
+  char* temppath_query = strduplicate("./temp/s21_grep_temp_0");
   system("mkdir -p ./temp");
-  temppath_query = strduplicate("./temp/s21_grep_temp_0");
   if (strlen(temppath_query) + 16 < 261) {
     for (int i = 1; open(temppath_query, O_CREAT | O_WRONLY | O_EXCL,
                          S_IRUSR | S_IWUSR) == -1;
