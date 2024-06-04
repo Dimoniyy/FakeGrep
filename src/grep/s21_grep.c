@@ -239,16 +239,17 @@ int handleLineWithRegex(char* buffer, char* filename, int line_i,
 
 long long getLineAndAlloc(char** destination, size_t* size_of_destination,
                           FILE* stream) {
-  char c = 'c';
   char* destination_new_ptr;
   size_t i = 0;
+  char c = 'c';
   if (stream == NULL) {
     c = '\n';
     i = 1;
   }
-  if (destination != NULL) {
+  if (destination != NULL && size_of_destination != NULL) {
     if (*destination == NULL) {
-      (*destination) = malloc(sizeof(char));
+      (*destination) = malloc(sizeof(char) * 8);
+      *size_of_destination = (sizeof(char) * 8);
     }
   }
   for (; c != '\n' && c != EOF && destination != NULL &&
@@ -256,8 +257,7 @@ long long getLineAndAlloc(char** destination, size_t* size_of_destination,
        i++) {
     if (i < CHAR_MAX) {
       c = fgetc(stream);
-      *size_of_destination = sizeof(char) * 8 * (i / 8 + ((i / 8) == 0));
-      destination_new_ptr = realloc(*destination, *size_of_destination);
+      destination_new_ptr = realloc(*destination, sizeof(char) * i + 1);
       if (destination_new_ptr != NULL) {
         *destination = destination_new_ptr;
         (*destination)[i] = (c == EOF ? '\n' : c);
