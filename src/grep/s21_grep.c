@@ -138,12 +138,6 @@ char* setupQuery(const char* query) {
   char *buffer, *buffer2 = NULL;
   char checking[][1] = {"(", ")", "{", "}", "?", "+", "|", "^", "$", "\0"};
   buffer = strduplicate(query);
-  if (buffer == NULL) {
-    while (buffer == NULL) {
-      buffer = malloc(sizeof(char));
-    }
-    buffer[0] = '\0';
-  }
 
   for (int i = 0; checking[i][0] && buffer != NULL; i++) {
     for (int j = 0; buffer[j]; j++) {
