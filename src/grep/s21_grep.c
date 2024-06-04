@@ -211,11 +211,11 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
 
 int handleLineWithRegex(char* buffer, char* filename, int line_i,
                         regex_t reegex, int arguments) {
-  regmatch_t __pmatch[3];
-  int regexec_res, rv = 0;
+  regmatch_t __pmatch[4];
+  int rv = 0;
   char* buffer_2;
-  while ((regexec_res = (regexec(&reegex, buffer, 2, __pmatch, 0) ==
-                         ((arguments & INVERT_MATCH) != 0)))) {
+  while (regexec(&reegex, buffer, 2, __pmatch, 0) ==
+         ((arguments & INVERT_MATCH) != 0)) {
     buffer_2 = strduplicate(buffer);
 
     if ((arguments & ONLY_MATCHING_PARTS_LINE) && !(arguments & INVERT_MATCH)) {
@@ -356,7 +356,10 @@ int loadQueryFileFromAnother(FILE* dest, const char* file_with_query_name) {
   stream = fopen(file_with_query_name, "r");
   if (stream != NULL) {
     while (getLineAndAlloc(&buffer, &len, stream) != -1) {
-      fprintf(dest, "%s", buffer_2 = setupQuery(buffer));
+      buffer_2 = setupQuery(buffer);
+      for(int i = 0; buffer_2[i] != '\0'; i++) {
+      putc(buffer_2[i], dest);
+      }
       if (buffer_2 != NULL) {
         free(buffer_2);
       }
@@ -372,16 +375,17 @@ int loadQueryFileFromAnother(FILE* dest, const char* file_with_query_name) {
 char* strduplicate(const char* buffer) {
   char* output = NULL;
   output = malloc(sizeof(*buffer));
-  strcpy(output, buffer);
+  if (output != NULL) {
+    strcpy(output, buffer);
+  }
   return output;
 }
 
 char* allocateTempFile() {
   char* temppath_query;
 
-  temppath_query = malloc(sizeof(char) * 261);
   system("mkdir -p ./temp");
-  strcpy(temppath_query, "./temp/s21_grep_temp_0");
+  temppath_query = strduplicate("./temp/s21_grep_temp_0");
   if (strlen(temppath_query) + 16 < 261) {
     for (int i = 1; open(temppath_query, O_CREAT | O_WRONLY | O_EXCL,
                          S_IRUSR | S_IWUSR) == -1;
@@ -390,42 +394,8 @@ char* allocateTempFile() {
                i);
     }
   } else {
-    printf("error");
+    printf("grep: Error creating temporary file");
   }
 
   return temppath_query;
 }
-
-/*int handleLineWithRegex(char* buffer, char* filename, int line_i,
-                        regex_t reegex, int arguments) {
-  regmatch_t __pmatch[3];
-  int regexec_res, rv = 0;
-  char* buffer_2;
-  regexec_res = regexec(&reegex, buffer, 2, __pmatch, 0);
-  while (regexec_res == ((arguments & INVERT_MATCH) != 0)) {
-    buffer_2 = strduplicate(buffer);
-    if ((arguments & ONLY_MATCHING_PARTS_LINE) && !(arguments & INVERT_MATCH)) {
-      strRip(&buffer, __pmatch->rm_eo, ((size_t)0) - 1);
-      strRip(&buffer_2, __pmatch->rm_so, __pmatch->rm_eo);
-    } else {
-      buffer[0] = '\0';
-    }
-    if ((arguments & OUTPUT_COUNT) == 0 &&
-        (MATCHING_FILES_ONLY & arguments) == 0) {
-      if ((arguments & NO_FILENAME_OUTPUT) == 0) {
-        printf("%s:", filename);
-      }
-      if (arguments & PROCEED_LINE_NUM) {
-        printf("%d:", line_i + 1);
-      }
-      printf("%s", buffer_2);
-    }
-    free(buffer_2);
-    regexec_res = (regexec(&reegex, buffer, 2, __pmatch, 0) ==
-                   ((arguments & INVERT_MATCH) != 0));
-
-    arguments = arguments ^ (arguments & INVERT_MATCH);
-    rv++;
-  }
-  return rv != 0;
-}*/
