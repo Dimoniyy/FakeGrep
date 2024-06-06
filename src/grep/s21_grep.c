@@ -63,15 +63,16 @@ int main(int argc, char* argv[]) {
                 loadQueryFileFromAnother(query_file, argv[i] + ((k + 1) * !t));
             k = (t == 0) ? strlen(argv[i]) - 1 : k;
             if (arguments < 0) {
-              printf("grep: %s: No such file or directory",
-                     argv[i] + ((k + 1) * !t));
+              fprintf(stderr, "grep: %s: No such file or directory",
+                      argv[i] + ((k + 1) * !t));
             }
             break;
           default:
             arguments |= argumentsWrite(argv[i][k]);
         }
       } else {
-        printf("grep: option requires an argument -- %c\n", argv[i][k]);
+        fprintf(stderr, "grep: option requires an argument -- %c\n",
+                argv[i][k]);
         printUsage();
         arguments = -1;
       }
@@ -101,7 +102,7 @@ int main(int argc, char* argv[]) {
     if ((stream = fopen(files_names[i], "r")) != NULL) {
       fileHandler(arguments, reegex, stream, files_names[i]);
       fclose(stream);
-    } else if (SUPPRESS_FILENAME_ERRORS ^ arguments) {
+    } else if ((SUPPRESS_FILENAME_ERRORS & arguments) == 0) {
       printf("grep: %s: No such file or directory\n", files_names[i]);
     }
   }
@@ -112,16 +113,15 @@ regex_t setupReegex(FILE* query_file, const int arguments) {
   regex_t reegex;
   char reegex_format[2048 * 16] = "\0";
   char* buffer = NULL;
-  size_t len = 0;
   int reg_flags = REG_EXTENDED;
 
   if (query_file != NULL) {
-    while (getLineAndAlloc(&buffer, &len, query_file) != -1) {
+    while (getLineAndAlloc(&buffer, query_file) != -1) {
       if (reegex_format[0] != '\0') {
         strcat(reegex_format, "|");
       }
-      buffer[strlen(buffer) - 1] = '\0';
-      strcat(reegex_format, buffer);
+      if (buffer[1] != '\0') buffer[strlen(buffer) - 1] = '\0';
+      if (buffer[0] != '\0') strcat(reegex_format, buffer);
     }
   }
   if (buffer != NULL) {
@@ -172,12 +172,10 @@ char* setupQuery(const char* query) {
 // handeles line search and printing trough a file
 int fileHandler(const int arguments, regex_t reegex, FILE* stream,
                 char* filename) {
-  size_t buffer_size = 0;
   int match_count = 0;
 
   char* buffer = NULL;
-  for (int line_i = 0; getLineAndAlloc(&buffer, &buffer_size, stream) > 0;
-       line_i++) {
+  for (int line_i = 0; getLineAndAlloc(&buffer, stream) > 0; line_i++) {
     if (buffer != NULL) {
       match_count +=
           handleLineWithRegex(buffer, filename, line_i, reegex, arguments);
@@ -202,7 +200,7 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
 
 int handleLineWithRegex(char* buffer, char* filename, int line_i,
                         regex_t reegex, int arguments) {
-  regmatch_t __pmatch[20];
+  regmatch_t __pmatch[1080];
   int rv = 0;
   char* buffer_2 = NULL;
   while (regexec(&reegex, buffer, 2, __pmatch, 0) ==
@@ -235,8 +233,7 @@ int handleLineWithRegex(char* buffer, char* filename, int line_i,
   return rv != 0;
 }
 
-long long getLineAndAlloc(char** destination, size_t* size_of_destination,
-                          FILE* stream) {
+long long getLineAndAlloc(char** destination, FILE* stream) {
   char* destination_new_ptr;
   size_t i = 0;
   char c = 'k';
@@ -244,16 +241,13 @@ long long getLineAndAlloc(char** destination, size_t* size_of_destination,
     c = '\n';
     i = 1;
   }
-  if (destination != NULL && size_of_destination != NULL) {
+  if (destination != NULL) {
     if (*destination == NULL) {
       (*destination) = malloc(sizeof(char) * 8);
-      *size_of_destination = (sizeof(char) * 8);
     }
   }
-  for (; c != '\n' && c != EOF && destination != NULL &&
-         size_of_destination != NULL;
-       i++) {
-    if (i < CHAR_MAX) {
+  for (; c != '\n' && c != EOF && destination != NULL; i++) {
+    if (i < 12000) {
       c = fgetc(stream);
       destination_new_ptr = realloc(*destination, sizeof(char) * i + 2);
       if (destination_new_ptr != NULL) {
@@ -271,7 +265,6 @@ long long getLineAndAlloc(char** destination, size_t* size_of_destination,
   if (c == EOF && i == 1) {
     i = -1;
   }
-  (*destination)[i + 1] = '\0';
   return i;
 }
 
@@ -341,12 +334,11 @@ void printUsage(void) {
 int loadQueryFileFromAnother(FILE* dest, const char* file_with_query_name) {
   char* buffer = NULL;
   char* buffer_2;
-  size_t len = 0;
   FILE* stream;
   int rv = 0;
   stream = fopen(file_with_query_name, "r");
   if (stream != NULL) {
-    while (getLineAndAlloc(&buffer, &len, stream) != -1) {
+    while (getLineAndAlloc(&buffer, stream) != -1) {
       buffer_2 = setupQuery(buffer);
       for (int i = 0; buffer_2[i] != '\0'; i++) {
         putc(buffer_2[i], dest);
