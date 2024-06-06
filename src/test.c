@@ -125,7 +125,7 @@ int combinations(const char* letters, char* temp_res, unsigned long int from,
   if (iteration == target_lenght &&
       out_n < (BUFFER_MAX_LENGHT * BUFFER_MAX_LENGHT)) {
     temp_res[target_lenght] = '\0';
-    out[out_n] = strdup(temp_res);
+    out[out_n] = strduplicate(temp_res);
     out_n++;
   }
   unsigned long int i = from;
@@ -138,4 +138,13 @@ int combinations(const char* letters, char* temp_res, unsigned long int from,
     i++;
   }
   return out_n;
+}
+
+char* strduplicate(const char* buffer) {
+  char* output = NULL;
+  output = malloc((strlen(buffer) + 1) * sizeof(char));
+  if (output != NULL) {
+    strcpy(output, buffer);
+  }
+  return output;
 }
