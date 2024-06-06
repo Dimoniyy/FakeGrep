@@ -45,7 +45,8 @@ int main(int argc, char* argv[]) {
     }
     for (unsigned int k = 1;
          arguments >= 0 && argv[i][0] == '-' && argv[i][k] != '\0'; k++) {
-      t = ((argv[i][k + 1] == '\0') && (argv[i][k] == 'f' || argv[i][k] == 'e'));
+      t = ((argv[i][k + 1] == '\0') &&
+           (argv[i][k] == 'f' || argv[i][k] == 'e'));
       if ((i + t) < argc) {
         switch (argv[i][k]) {
           case 'e':
