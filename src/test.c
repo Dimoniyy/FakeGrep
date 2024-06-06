@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #define MATCHING_FILES_ONLY 0x1        // -l
 #define CASE_INSENSITIVE 0X2           // -i
 #define INVERT_MATCH 0x4               // -v
@@ -19,6 +18,7 @@ int combinations(const char* letters, char* temp_res, unsigned long int from,
                  unsigned long int target_lenght, char** out);
 int filesCompare(char* file_1_path, char* file_2_path);
 void runCompareGrep(char*);
+char* strduplicate(const char* buffer);
 
 int main() {
   char letters[] = "livchnso";  // 8 letters
