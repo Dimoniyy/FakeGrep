@@ -13,10 +13,6 @@ DEP_LIST = $(patsubst $(SRC_DIR)%.c, $(OBJ_DIR)%.d, $(SRC_LIST))
 
 $(NAME):
 	$(CC) $(CFLAGS) -o $@ $@.c
-
-$(OBJ_DIR)%.o: $(SRC_DIR)%.c
-	$(CC) -MMD $(CFLAGS) -c $< -o $@
-
 -include $(DEP_LIST)
 
 clean:

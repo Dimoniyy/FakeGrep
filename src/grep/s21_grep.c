@@ -62,6 +62,10 @@ int main(int argc, char* argv[]) {
             arguments |=
                 loadQueryFileFromAnother(query_file, argv[i] + ((k + 1) * !t));
             k = (t == 0) ? strlen(argv[i]) - 1 : k;
+            if (arguments < 0) {
+              printf("grep: %s: No such file or directory",
+                     argv[i] + ((k + 1) * !t));
+            }
             break;
           default:
             arguments |= argumentsWrite(argv[i][k]);
@@ -98,7 +102,7 @@ int main(int argc, char* argv[]) {
       fileHandler(arguments, reegex, stream, files_names[i]);
       fclose(stream);
     } else if (SUPPRESS_FILENAME_ERRORS ^ arguments) {
-      printf("s21_grep: %s: No such file or directory\n", files_names[i]);
+      printf("grep: %s: No such file or directory\n", files_names[i]);
     }
   }
   regfree(&reegex);
@@ -198,7 +202,7 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
 
 int handleLineWithRegex(char* buffer, char* filename, int line_i,
                         regex_t reegex, int arguments) {
-  regmatch_t __pmatch[4];
+  regmatch_t __pmatch[20];
   int rv = 0;
   char* buffer_2 = NULL;
   while (regexec(&reegex, buffer, 2, __pmatch, 0) ==
@@ -235,7 +239,7 @@ long long getLineAndAlloc(char** destination, size_t* size_of_destination,
                           FILE* stream) {
   char* destination_new_ptr;
   size_t i = 0;
-  char c = 'c';
+  char c = 'k';
   if (stream == NULL) {
     c = '\n';
     i = 1;
