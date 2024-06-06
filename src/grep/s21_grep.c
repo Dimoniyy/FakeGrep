@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
 
   char* buffer = NULL;
   char* files_names[1024];
-  char tempfile_path[] = "./temp/s21greptemp.XXXX";
+  char tempfile_path[] = "./temp/s21greptemp.XXXXXX";
   regex_t reegex;
   FILE* query_file = NULL;
   FILE* stream;
