@@ -112,7 +112,7 @@ int argumentsWrite(char* argument) {
           printf(
               "cat: illegal option -- %c\nusage: cat [-belnstuv] [file ...]\n",
               argument[1]);
-        }  else
+        } else
           rv |= temp;
         break;
     }
