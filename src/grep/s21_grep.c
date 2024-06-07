@@ -328,7 +328,8 @@ int argumentsWrite(char argument) {
 }
 
 void printUsage(void) {
-  printf(
+  fprintf(
+      stderr,
       "usage: s21_grep [-c] [-e pattern] [-f file] [-i] [-v] [-l] [-o] [-s] "
       "[-h] [-n] [pattern] [file ...]\n");
 }
