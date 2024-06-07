@@ -3,7 +3,7 @@
 int main(int argc, char* argv[]) {
   int arguments = 0x0, i = 1;
   for (; i < argc && argv[i][0] == '-'; i++) {
-    arguments = arguments | argumentsWrite(argv[i]);
+    arguments |= argumentsWrite(argv[i]);
   }
 
   do {
@@ -44,14 +44,14 @@ void fileHandlerCat(FILE* stream, const int arguments) {
     }
     c = convertInvisible(arguments, c);
 
-    if (arguments & EOL_DOLLAR_SIGN && c == '\n') {
-      if (arguments & NUMBER_LINES_NO_EMPTY && c_prev == '\n') {
-        printf("  ");
+    if ((arguments & EOL_DOLLAR_SIGN) && (c == '\n')) {
+      if ((arguments & NUMBER_LINES_NO_EMPTY) && c_prev == '\n') {
+        printf("      \t");
       }
       printf("$");
     }
     if (c != EOF) {
-      printf("%c", c);
+      putchar(c);
     }
 
     c_prev_prev = c_prev;
@@ -71,44 +71,52 @@ char convertInvisible(const int arguments, char c) {
 
 int argumentsWrite(char* argument) {
   int rv = 0;
-  switch (argument[1]) {
-    case 'b':
-      rv |= NUMBER_LINES_NO_EMPTY;
-      break;
-    case 'e':
-      rv |= EOL_DOLLAR_SIGN | DISPLAY_NON_PRINTING;
-      break;
-    case 'n':
-      rv |= NUMBER_LINES;
-      break;
-    case 's':
-      rv |= SQUEEZE_MULTIPLE_AJACENT_EMPTY_LINES;
-      break;
-    case 't':
-      rv |= DISPLAY_TAB_CHARACTERS | DISPLAY_NON_PRINTING;
-      break;
-    case 'E':
-      rv |= EOL_DOLLAR_SIGN;
-      break;
-    case 'T':
-      rv |= DISPLAY_TAB_CHARACTERS;
-      break;
-    case 'u':
-      //
-      break;
-    case 'v':
-      rv |= DISPLAY_NON_PRINTING;
-      break;
-    case '\0':
-      rv |= USE_STDIN;
-      break;
-    default:
-      rv |= argumentsLongWriting(argument);
-      if (!rv) {
-        printf("cat: illegal option -- %c\nusage: cat [-belnstuv] [file ...]\n",
-               argument[1]);
-      }
-      break;
+  int temp = 0;
+
+  argument++;
+  while (*argument != '\0') {
+    switch (*argument) {
+      case 'b':
+        rv |= NUMBER_LINES_NO_EMPTY;
+        break;
+      case 'e':
+        rv |= EOL_DOLLAR_SIGN | DISPLAY_NON_PRINTING;
+        break;
+      case 'n':
+        rv |= NUMBER_LINES;
+        break;
+      case 's':
+        rv |= SQUEEZE_MULTIPLE_AJACENT_EMPTY_LINES;
+        break;
+      case 't':
+        rv |= DISPLAY_TAB_CHARACTERS | DISPLAY_NON_PRINTING;
+        break;
+      case 'E':
+        rv |= EOL_DOLLAR_SIGN;
+        break;
+      case 'T':
+        rv |= DISPLAY_TAB_CHARACTERS;
+        break;
+      case 'u':
+        //
+        break;
+      case 'v':
+        rv |= DISPLAY_NON_PRINTING;
+        break;
+      case '\0':
+        rv |= USE_STDIN;
+        break;
+      default:
+        temp = argumentsLongWriting(argument);
+        if (!temp) {
+          printf(
+              "cat: illegal option -- %c\nusage: cat [-belnstuv] [file ...]\n",
+              argument[1]);
+        }  else
+          rv |= temp;
+        break;
+    }
+    argument++;
   }
   return rv;
 }

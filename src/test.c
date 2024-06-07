@@ -21,36 +21,32 @@ char* strduplicate(const char* buffer);
 void runCompareCat(char* flags_wo_dash);
 
 int main() {
-#ifndef TEST_CAT
-  char letters[] = "livchnso";  // 8 letters
-#else
-  char letters[] = "bevnst";
-#endif
+  int how_many = 0, fail = 0, res = 0;
   char buffer[BUFFER_MAX_LENGHT];
   char** out;
   int len_of_letters;
-#ifndef TEST_CAT
-  char sys_tempfilepath[BUFFER_MAX_LENGHT] = "./temp/tempfile_test_grep";
-  char s21_tempfilepath[BUFFER_MAX_LENGHT] = "./temp/tempfile_test_s21grep";
-#else
-  char sys_tempfilepath[BUFFER_MAX_LENGHT] = "./temp/tempfile_test_cat";
-  char s21_tempfilepath[BUFFER_MAX_LENGHT] = "./temp/tempfile_test_s21cat";
-#endif
   FILE* log_file;
-  int how_many = 0, fail = 0, res = 0;
-  system("echo \"start of log file:\" > log_file\n");
+#ifndef TEST_CAT
+  char letters[] = "livchnso";  // 8 letters
+  char sys_tempfilepath[] = "./temp/tempfile_test_grep";
+  char s21_tempfilepath[] = "./temp/tempfile_test_s21grep";
+  char log_file_path[] = "./log_file_grep";
+  void (*runTests)(char*) = runCompareGrep;
+#else
+  char letters[] = "bevnst";
+  char sys_tempfilepath[] = "./temp/tempfile_test_cat";
+  char s21_tempfilepath[] = "./temp/tempfile_test_s21cat";
+  char log_file_path[] = "./log_file_cat";
+  void (*runTests)(char*) = runCompareCat;
+#endif
   out = malloc(sizeof(char*) * BUFFER_MAX_LENGHT * BUFFER_MAX_LENGHT);
-  log_file = fopen("./log_file", "w");
+  log_file = fopen(log_file_path, "w");
   len_of_letters = strlen(letters);
   for (int i = 1; i < len_of_letters; i++) {
     how_many = combinations(letters, buffer, 0, len_of_letters, 0, i, out);
   }
   for (int j = 0; j < how_many; j++) {
-#ifndef TEST_CAT
-    runCompareGrep(out[j]);
-#else
-    runCompareCat(out[j]);
-#endif
+    runTests(out[j]);
     fail += (filesCompare(sys_tempfilepath, s21_tempfilepath) != 0);
     if (fail) {
       fprintf(log_file, "fail with -%s\n", out[j]);
@@ -64,10 +60,12 @@ int main() {
   free(out);
   printf("%d fail(s)\n", res);
   if (res > 0) {
-    printf("check log_file for details\n");
+    printf("check %s for details\n", log_file_path);
   }
-  system("rm ./temp/tempfile_test_grep");
-  system("rm ./temp/tempfile_test_s21grep");
+  snprintf(buffer, BUFFER_MAX_LENGHT, "rm %s", sys_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "rm %s", s21_tempfilepath);
+  system(buffer);
 }
 
 void runCompareGrep(char* flags_wo_dash) {
@@ -120,14 +118,14 @@ void runCompareCat(char* flags_wo_dash) {
   snprintf(buffer, BUFFER_MAX_LENGHT, "cat -%s text \"text 2\" > %s",
            flags_wo_dash, sys_tempfilepath);
   system(buffer);
-  snprintf(buffer, BUFFER_MAX_LENGHT, "./s21_cat -%s text \"text 2\" > %s",
+  snprintf(buffer, BUFFER_MAX_LENGHT, "./cat/s21_cat -%s text \"text 2\" > %s",
            flags_wo_dash, s21_tempfilepath);
   system(buffer);
   snprintf(buffer, BUFFER_MAX_LENGHT, "cat -%s text >> %s", flags_wo_dash,
            sys_tempfilepath);
   system(buffer);
-  snprintf(buffer, BUFFER_MAX_LENGHT, "./s21_cat -%s text >> %s", flags_wo_dash,
-           s21_tempfilepath);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "./cat/s21_cat -%s text >> %s",
+           flags_wo_dash, s21_tempfilepath);
   system(buffer);
 }
 #endif
