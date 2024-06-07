@@ -46,4 +46,11 @@ test_cat: s21_cat
 test_both: test_grep test_cat
 
 clean:
-	rm -f -- test test_cat test_grep a.out ./grep/s21_grep ./cat/s21_cat
+	rm -f -- test test_cat test_grep a.out ./grep/s21_grep ./cat/s21_cat tempfile_0
+
+diff_grep: s21_grep
+	./grep/s21_grep $(ARGS) > tempfile_1
+	grep $(ARGS) > tempfile_2
+	diff tempfile_1 tempfile_2 > ./tempfile_0
+	cat -bten ./tempfile_0
+	rm -f tempfile_1 tempfile_2
