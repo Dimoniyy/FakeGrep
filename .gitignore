@@ -54,3 +54,7 @@ src/grep/s21_grep
 src/log_file
 .vscode/launch.json
 .vscode/tasks.json
+.DS*
+.gitignore
+src/tempfile_1
+src/tempfile_2
