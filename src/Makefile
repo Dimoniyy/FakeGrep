@@ -46,4 +46,7 @@ test_cat: s21_cat
 test_both: test_grep test_cat
 
 clean:
-	rm -f -- test test_cat test_grep a.out ./grep/s21_grep ./cat/s21_cat tempfile_0
+	rm -f -drv -- test test_cat test_grep a.out ./grep/s21_grep ./cat/s21_cat tempfile_0 *.dSYM ./grep/temp/*
+
+test_grep_with_bash: s21_grep
+	(cd ./grep && sh ./tests_.sh)

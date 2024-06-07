@@ -12,13 +12,16 @@
 #define COMBINATIONS_MAX_LENGHT 10
 #define BUFFER_MAX_LENGHT 1024
 
+#ifndef TEST_CAT
+void runCompareGrep(char*);
+#else
+void runCompareCat(char*);
+#endif
 int combinations(const char* letters, char* temp_res, unsigned long int from,
                  unsigned long int until, unsigned long int iteration,
                  unsigned long int target_lenght, char** out);
 int filesCompare(char* file_1_path, char* file_2_path);
-void runCompareGrep(char*);
 char* strduplicate(const char* buffer);
-void runCompareCat(char* flags_wo_dash);
 
 int main() {
   int how_many = 0, fail = 0, res = 0;
@@ -42,6 +45,7 @@ int main() {
   out = malloc(sizeof(char*) * BUFFER_MAX_LENGHT * BUFFER_MAX_LENGHT);
   log_file = fopen(log_file_path, "w");
   len_of_letters = strlen(letters);
+
   for (int i = 1; i < len_of_letters; i++) {
     how_many = combinations(letters, buffer, 0, len_of_letters, 0, i, out);
   }
@@ -68,6 +72,7 @@ int main() {
   system(buffer);
 }
 
+#ifndef TEST_CAT
 void runCompareGrep(char* flags_wo_dash) {
   char sys_tempfilepath[] = "./temp/tempfile_test_grep";
   char s21_tempfilepath[] = "./temp/tempfile_test_s21grep";
@@ -107,6 +112,7 @@ void runCompareGrep(char* flags_wo_dash) {
            s21_tempfilepath);
   system(buffer);
 }
+#endif
 
 #ifdef TEST_CAT
 void runCompareCat(char* flags_wo_dash) {
