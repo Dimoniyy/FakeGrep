@@ -201,10 +201,11 @@ int fileHandler(const int arguments, regex_t reegex, FILE* stream,
 int handleLineWithRegex(char* buffer, char* filename, int line_i,
                         regex_t reegex, int arguments) {
   regmatch_t __pmatch[1080];
-  int rv = 0;
+  int rv = 0, exit_loop = 0;
   char* buffer_2 = NULL;
-  while (regexec(&reegex, buffer, 2, __pmatch, 0) ==
-         ((arguments & INVERT_MATCH) != 0)) {
+  while ((regexec(&reegex, buffer, 2, __pmatch, 0) ==
+          ((arguments & INVERT_MATCH) != 0)) &&
+         exit_loop == 0) {
     buffer_2 = strduplicate(buffer);
     if (buffer_2 == NULL) buffer_2 = strduplicate("\0");
 
@@ -214,6 +215,7 @@ int handleLineWithRegex(char* buffer, char* filename, int line_i,
       strcat(buffer_2, "\n");
     } else {
       buffer[0] = '\0';
+      exit_loop = 1;
     }
     if ((arguments & OUTPUT_COUNT) == 0 &&
         (MATCHING_FILES_ONLY & arguments) == 0) {

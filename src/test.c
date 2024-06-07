@@ -1,4 +1,3 @@
-#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,24 +18,43 @@ int combinations(const char* letters, char* temp_res, unsigned long int from,
 int filesCompare(char* file_1_path, char* file_2_path);
 void runCompareGrep(char*);
 char* strduplicate(const char* buffer);
+void runCompareCat(char* flags_wo_dash);
 
 int main() {
+#ifndef TEST_CAT
   char letters[] = "livchnso";  // 8 letters
+#else
+  char letters[] = "bevnst";
+#endif
   char buffer[BUFFER_MAX_LENGHT];
   char** out;
+  int len_of_letters;
+#ifndef TEST_CAT
+  char sys_tempfilepath[BUFFER_MAX_LENGHT] = "./temp/tempfile_test_grep";
+  char s21_tempfilepath[BUFFER_MAX_LENGHT] = "./temp/tempfile_test_s21grep";
+#else
+  char sys_tempfilepath[BUFFER_MAX_LENGHT] = "./temp/tempfile_test_cat";
+  char s21_tempfilepath[BUFFER_MAX_LENGHT] = "./temp/tempfile_test_s21cat";
+#endif
   FILE* log_file;
   int how_many = 0, fail = 0, res = 0;
   system("echo \"start of log file:\" > log_file\n");
   out = malloc(sizeof(char*) * BUFFER_MAX_LENGHT * BUFFER_MAX_LENGHT);
   log_file = fopen("./log_file", "w");
-  for (int i = 1; i < 8; i++) {
-    how_many = combinations(letters, buffer, 0, 8, 0, i, out);
+  len_of_letters = strlen(letters);
+  for (int i = 1; i < len_of_letters; i++) {
+    how_many = combinations(letters, buffer, 0, len_of_letters, 0, i, out);
   }
   for (int j = 0; j < how_many; j++) {
+#ifndef TEST_CAT
     runCompareGrep(out[j]);
-    fail += (filesCompare("./temp/tempfile_test_grep", "./temp/tempfile_test_s21grep") != 0);
+#else
+    runCompareCat(out[j]);
+#endif
+    fail += (filesCompare(sys_tempfilepath, s21_tempfilepath) != 0);
     if (fail) {
       fprintf(log_file, "fail with -%s\n", out[j]);
+      fflush(log_file);
     }
     res += fail;
   }
@@ -53,48 +71,66 @@ int main() {
 }
 
 void runCompareGrep(char* flags_wo_dash) {
+  char sys_tempfilepath[] = "./temp/tempfile_test_grep";
+  char s21_tempfilepath[] = "./temp/tempfile_test_s21grep";
   system("mkdir -p ./temp");
   char buffer[BUFFER_MAX_LENGHT];
-  snprintf(buffer, BUFFER_MAX_LENGHT,
-           "grep -%s foo text > ./temp/tempfile_test_grep", flags_wo_dash);
+
+  snprintf(buffer, BUFFER_MAX_LENGHT, "grep -%s foo text > %s", flags_wo_dash,
+           sys_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "./grep/s21_grep -%s foo text > %s",
+           flags_wo_dash, s21_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "grep -%se foo text >> %s", flags_wo_dash,
+           sys_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "./grep/s21_grep -%se foo text >> %s",
+           flags_wo_dash, s21_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "grep -%sf \"text 2\" text >> %s",
+           flags_wo_dash, sys_tempfilepath);
   system(buffer);
   snprintf(buffer, BUFFER_MAX_LENGHT,
-           "./grep/s21_grep -%s foo text > ./temp/tempfile_test_s21grep",
-           flags_wo_dash);
+           "./grep/s21_grep -%sf \"text 2\" text >> %s", flags_wo_dash,
+           s21_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "grep -%sefoo text >> %s", flags_wo_dash,
+           sys_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "./grep/s21_grep -%sefoo text >> %s",
+           flags_wo_dash, s21_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "grep \"-%sftext 2\" text >> %s",
+           flags_wo_dash, sys_tempfilepath);
   system(buffer);
   snprintf(buffer, BUFFER_MAX_LENGHT,
-           "grep -%se foo text >> ./temp/tempfile_test_grep", flags_wo_dash);
-  system(buffer);
-  snprintf(buffer, BUFFER_MAX_LENGHT,
-           "./grep/s21_grep -%se foo text >> ./temp/tempfile_test_s21grep",
-           flags_wo_dash);
-  system(buffer);
-  snprintf(buffer, BUFFER_MAX_LENGHT,
-           "grep -%sf \"text 2\" text >> ./temp/tempfile_test_grep",
-           flags_wo_dash);
-  system(buffer);
-  snprintf(
-      buffer, BUFFER_MAX_LENGHT,
-      "./grep/s21_grep -%sf \"text 2\" text >> ./temp/tempfile_test_s21grep",
-      flags_wo_dash);
-  system(buffer);
-  snprintf(buffer, BUFFER_MAX_LENGHT,
-           "grep -%sefoo text >> ./temp/tempfile_test_grep", flags_wo_dash);
-  system(buffer);
-  snprintf(buffer, BUFFER_MAX_LENGHT,
-           "./grep/s21_grep -%sefoo text >> ./temp/tempfile_test_s21grep",
-           flags_wo_dash);
-  system(buffer);
-  snprintf(buffer, BUFFER_MAX_LENGHT,
-           "grep \"-%sftext 2\" text >> ./temp/tempfile_test_grep",
-           flags_wo_dash);
-  system(buffer);
-  snprintf(
-      buffer, BUFFER_MAX_LENGHT,
-      "./grep/s21_grep \"-%sftext 2\" text >> ./temp/tempfile_test_s21grep",
-      flags_wo_dash);
+           "./grep/s21_grep \"-%sftext 2\" text >> %s", flags_wo_dash,
+           s21_tempfilepath);
   system(buffer);
 }
+
+#ifdef TEST_CAT
+void runCompareCat(char* flags_wo_dash) {
+  char sys_tempfilepath[] = "./temp/tempfile_test_cat";
+  char s21_tempfilepath[] = "./temp/tempfile_test_s21cat";
+  system("mkdir -p ./temp");
+  char buffer[BUFFER_MAX_LENGHT];
+
+  snprintf(buffer, BUFFER_MAX_LENGHT, "cat -%s text \"text 2\" > %s",
+           flags_wo_dash, sys_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "./s21_cat -%s text \"text 2\" > %s",
+           flags_wo_dash, s21_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "cat -%s text >> %s", flags_wo_dash,
+           sys_tempfilepath);
+  system(buffer);
+  snprintf(buffer, BUFFER_MAX_LENGHT, "./s21_cat -%s text >> %s", flags_wo_dash,
+           s21_tempfilepath);
+  system(buffer);
+}
+#endif
 
 int filesCompare(char* file_1_path, char* file_2_path) {
   FILE* file1;
@@ -106,8 +142,8 @@ int filesCompare(char* file_1_path, char* file_2_path) {
   file2 = fopen(file_2_path, "r");
   if (file1 != NULL && file2 != NULL) {
     do {
-      file_1_out = getc(file1);
-      file_2_out = getc(file2);
+      file_1_out = fgetc(file1);
+      file_2_out = fgetc(file2);
       res += (file_1_out != file_2_out);
     } while ((file_1_out != EOF) && (file_2_out != EOF));
   } else {
