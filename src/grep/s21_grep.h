@@ -29,5 +29,5 @@ extern void strRip(char** target_ptr, const size_t from, const size_t to);
 extern long long getLineAndAlloc(char** destination, FILE* stream);
 extern int handleLineWithRegex(char* buffer, char* filename, int line_i,
                                regex_t reegex, int arguments);
-
+extern int trailingBackslash(char);
 #endif

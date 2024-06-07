@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
       files_names[i_files_to_process] = (argv[i]);
       i_files_to_process++;
     } else if (argv[i][0] != '-') {
+      arguments |= trailingBackslash(argv[i][strlen(argv[i]) - 1]);
       fputs(buffer = setupQuery(argv[use_as_query_n]), query_file);
       free(buffer);
       q_i++;
@@ -51,6 +52,7 @@ int main(int argc, char* argv[]) {
         switch (argv[i][k]) {
           case 'e':
             i += t;
+            arguments |= trailingBackslash(argv[i][strlen(argv[i])]);
             buffer = setupQuery((argv[i] + ((k + 1) * !t)));
             fputs(buffer, query_file);
             fputs("\n", query_file);
@@ -103,7 +105,7 @@ int main(int argc, char* argv[]) {
       fileHandler(arguments, reegex, stream, files_names[i]);
       fclose(stream);
     } else if ((SUPPRESS_FILENAME_ERRORS & arguments) == 0) {
-      printf("grep: %s: No such file or directory\n", files_names[i]);
+      fprintf(stderr, "grep: %s: No such file or directory\n", files_names[i]);
     }
   }
   regfree(&reegex);
@@ -365,4 +367,15 @@ char* strduplicate(const char* buffer) {
     strcpy(output, buffer);
   }
   return output;
+}
+
+int trailingBackslash(char c) {
+  int rv = -1;
+  if (c == '\\') {
+    fprintf(stderr, "grep: trailing backslash (\\)");
+    rv = -1;
+  } else {
+    rv = 0;
+  }
+  return rv;
 }
